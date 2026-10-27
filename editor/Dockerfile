@@ -12,10 +12,21 @@ ARG PBX_URL=http://api:3000
 ARG WORKFLOW_URL=http://workflow-engine:3002
 ARG GATEWAY_URL=http://pipecat-flow:7860
 ARG ASTRADIAL_MODE=selfhosted
+# Auth provider — bake into the static bundle at build time.
+# 'false' (default) → OssLoginForm renders, login is api_key + api_secret.
+# 'true' → Firebase login UI, requires NEXT_PUBLIC_FIREBASE_* env vars.
+ARG NEXT_PUBLIC_USE_FIREBASE=false
+# SIP host advertised to softphone provisioning UI (SipQrDialog).
+# Empty → SipQrDialog derives from window.location at runtime.
+ARG NEXT_PUBLIC_SIP_HOST=
+ARG NEXT_PUBLIC_SIP_PORT=5060
 ENV NEXT_PUBLIC_PBX_URL=$PBX_URL
 ENV NEXT_PUBLIC_WORKFLOW_URL=$WORKFLOW_URL
 ENV NEXT_PUBLIC_GATEWAY_URL=$GATEWAY_URL
 ENV NEXT_PUBLIC_ASTRADIAL_MODE=$ASTRADIAL_MODE
+ENV NEXT_PUBLIC_USE_FIREBASE=$NEXT_PUBLIC_USE_FIREBASE
+ENV NEXT_PUBLIC_SIP_HOST=$NEXT_PUBLIC_SIP_HOST
+ENV NEXT_PUBLIC_SIP_PORT=$NEXT_PUBLIC_SIP_PORT
 
 RUN npm run build
 

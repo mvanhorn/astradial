@@ -38,7 +38,11 @@ module.exports = (sequelize) => {
       allowNull: false
     },
     status: {
-      type: DataTypes.ENUM('active', 'suspended', 'deleted'),
+      // 'pending' = requested via /auth/request-org, awaiting admin
+      // approval. 'active' = approved. 'suspended' = paused.
+      // 'deleted' = soft-deleted. UI's Pending Approvals list filters
+      // for status === 'pending'.
+      type: DataTypes.ENUM('pending', 'active', 'suspended', 'deleted'),
       defaultValue: 'active'
     },
     settings: {
@@ -48,7 +52,7 @@ module.exports = (sequelize) => {
         max_dids: 10,
         max_users: 50,
         max_queues: 10,
-        recording_enabled: false,
+        recording_enabled: true,
         webhook_enabled: true,
         features: {
           call_transfer: true,
@@ -75,25 +79,31 @@ module.exports = (sequelize) => {
         phone: null,
         address: null
       }
+    },
+    ticket_alerts_enabled: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false
     }
   }, {
     tableName: 'organizations',
     timestamps: true,
     underscored: true,
     hooks: {
-      beforeValidate: async (org) => {
-        // allowNull:false validates before beforeCreate, so populate here.
+      beforeCreate: async (org) => {
+        // Generate API key if not provided
         if (!org.api_key) {
           org.api_key = `org_${uuidv4().replace(/-/g, '')}`;
         }
-        if (!org.context_prefix) {
-          org.context_prefix = `org_${Date.now().toString(36)}`;
-        }
-      },
-      beforeCreate: async (org) => {
+        // Generate API secret and hash it
         if (!org.api_secret) {
           const secret = uuidv4();
           org.api_secret = await bcrypt.hash(secret, process.env.BCRYPT_ROUNDS || 12);
+        }
+        // Generate context prefix if not provided
+        if (!org.context_prefix) {
+          const timestamp = Date.now().toString(36);
+          org.context_prefix = `org_${timestamp}`;
         }
       },
       beforeUpdate: async (org) => {
